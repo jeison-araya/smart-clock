@@ -1,6 +1,13 @@
+// MATRIX LIBRARIES 
 #include <Adafruit_GFX.h>
 #include <Adafruit_NeoMatrix.h>
 #include <Adafruit_NeoPixel.h>
+
+// ESP AP
+#include <ESP8266WiFi.h>
+
+// ESP WEB SERVER
+#include <ESP8266WebServer.h>
 
 #ifndef PSTR
  #define PSTR // Make Arduino Due happy
@@ -8,32 +15,19 @@
 
 #define PIN D2
 
-// MATRIX DECLARATION:
-// Parameter 1 = width of NeoPixel matrix
-// Parameter 2 = height of matrix
-// Parameter 3 = pin number (most are valid)
-// Parameter 4 = matrix layout flags, add together as needed:
-//   NEO_MATRIX_TOP, NEO_MATRIX_BOTTOM, NEO_MATRIX_LEFT, NEO_MATRIX_RIGHT:
-//     Position of the FIRST LED in the matrix; pick two, e.g.
-//     NEO_MATRIX_TOP + NEO_MATRIX_LEFT for the top-left corner.
-//   NEO_MATRIX_ROWS, NEO_MATRIX_COLUMNS: LEDs are arranged in horizontal
-//     rows or in vertical columns, respectively; pick one or the other.
-//   NEO_MATRIX_PROGRESSIVE, NEO_MATRIX_ZIGZAG: all rows/columns proceed
-//     in the same order, or alternate lines reverse direction; pick one.
-//   See example below for these values in action.
-// Parameter 5 = pixel type flags, add together as needed:
-//   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
-//   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
-//   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
-//   NEO_GRBW    Pixels are wired for GRBW bitstream (RGB+W NeoPixel products)
-//   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
+// ACCESS POINT CONFIGURATION
+const char *ssid = "SMART-WATCH";
+const char *password = "12345678";
+
+IPAddress local_IP(192,168,4,22);
+IPAddress gateway(192,168,4,9);
+IPAddress subnet(255,255,255,0);
+
+// WEB SERVER
+ESP8266WebServer server(80);
 
 
-// Example for NeoPixel Shield.  In this application we'd like to use it
-// as a 5x8 tall matrix, with the USB port positioned at the top of the
-// Arduino.  When held that way, the first pixel is at the top right, and
-// lines are arranged in columns, progressive order.  The shield uses
-// 800 KHz (v2) pixels that expect GRB color data.
+// MATRIX CONFIGURATION
 Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(32, 8, PIN,
   NEO_MATRIX_TOP     + NEO_MATRIX_LEFT +
   NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG,
@@ -43,54 +37,47 @@ const uint16_t colors[] = {
   matrix.Color(111, 3, 252), matrix.Color(0, 255, 0), matrix.Color(0, 0, 255) };
 
 void setup() {
+  Serial.begin(115200);
+  Serial.println();
+
+  accessPointSetup();
+  buildEndpoints();
+  matixSetup();
+}
+
+void accessPointSetup() {
+  Serial.print("Setting soft-AP configuration ... ");
+  Serial.println(WiFi.softAPConfig(local_IP, gateway, subnet) ? "Ready" : "Failed!"); 
+  Serial.print("Setting soft-AP ... ");
+  Serial.println(WiFi.softAP(ssid,password) ? "Ready" : "Failed!");
+  Serial.print("Soft-AP IP address = ");
+  Serial.println(WiFi.softAPIP());
+}
+
+void matixSetup() {
   matrix.begin();
   matrix.setTextWrap(false);
   matrix.setBrightness(40);
   matrix.setTextColor(colors[0]);
 }
 
-int x    = matrix.width();
-int pass = 0;
+
+void handleRoot() {
+  server.send(200, "text/html", "<h1>You are connected</h1>");
+}
+
+void buildEndpoints() {
+  server.on("/", handleRoot);
+  server.begin();  
+}
 
 void loop() {
-  // byte logo[8][8][3] = { 
-  //  {{255,255,255}, {50,50,50}, {255,255,255}, {255,255,255}, {255,255,255}, {0,255,0}, {0,0,255}, {255,0,0}},
-  //  {{255,255,255}, {50,255,255}, {255,255,255}, {255,255,255}, {255,255,255}, {0,255,0}, {0,0,255}, {255,0,0}},
-  //  {{255,255,255}, {50,255,255}, {255,255,255}, {255,255,255}, {255,255,255}, {0,255,0}, {0,0,255}, {255,0,0}},
-  //  {{255,255,255}, {50,255,255}, {255,255,255}, {255,255,255}, {255,255,255}, {0,255,0}, {0,0,255}, {255,0,0}},
-  //  {{255,255,255}, {255,255,50}, {255,255,255}, {255,255,255}, {255,255,255}, {0,255,0}, {0,0,255}, {255,0,0}},
-  //  {{255,255,255}, {255,255,255}, {255,255,255}, {255,255,255}, {255,255,255}, {0,255,0}, {0,0,255}, {255,0,0}},
-  //  {{255,255,255}, {255,50,50}, {255,255,255}, {255,255,255}, {255,255,255}, {0,255,0}, {0,0,255}, {255,0,0}},
-  //  {{255,255,255}, {255,50,255}, {255,255,255}, {255,255,255}, {255,255,255}, {0,255,0}, {0,0,255}, {255,0,0}},
-  // };
+  Serial.print("[Server Connected] ");
+  Serial.println(WiFi.softAPIP());
 
-  // drawMatrix(logo);
-  // matrix.show();
+  delay(500);
 
-  // delay(2000);
-  // matrix.fillScreen(0);
-  // matrix.show();
-
-  // delay(1000);
-  // for(int col=0; col < 8; col++) {
-  //   for(int row=0; row < 32; row++) {
-  //     matrix.fillScreen(0);
-  //     matrix.drawPixel(row, col, colors[0]);
-  //     matrix.show();
-  //     delay(500);
-  //   }
-  // }
-
-  matrix.fillScreen(0);
-  matrix.setCursor(x, 0);
-  matrix.print(F("12:10"));
-  if(--x < -36) {
-    x = matrix.width();
-    if(++pass >= 3) pass = 0;
-    matrix.setTextColor(colors[pass]);
-  }
-  matrix.show();
-  delay(100);
+  server.handleClient();
 }
 
 void drawMatrix(byte matrix_values[8][8][3]) {
