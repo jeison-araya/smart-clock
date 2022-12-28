@@ -1,6 +1,11 @@
 // COMMON
 #include <FS.h>
 #include <ArduinoJson.h>
+
+#ifndef PSTR
+#define PSTR
+#endif
+
 // MATRIX LIBRARIES
 #include <Adafruit_GFX.h>
 #include <Adafruit_NeoMatrix.h>
@@ -11,10 +16,6 @@
 
 // ESP WEB SERVER
 #include <ESP8266WebServer.h>
-
-#ifndef PSTR
-#define PSTR  // Make Arduino Due happy
-#endif
 
 // PIN CONFIGURATION
 #define RESET_BUTTON D0
@@ -59,7 +60,7 @@ void setup() {
     wifiClientSetup();
   } else {
     accessPointSetup();
-    buildEndpoints();    
+    buildEndpoints();
   }
 
   matixSetup();
