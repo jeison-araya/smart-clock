@@ -22,6 +22,11 @@
 #define STATE_LED D1
 #define PIN D2
 
+// MODES
+
+#define CLOCK_MODE 0
+int currentMode = CLOCK_MODE;
+
 // ACCESS POINT CONFIGURATION
 const char *ssid = "SMART-WATCH";
 const char *password = "12345678";
@@ -210,16 +215,6 @@ void buildEndpoints() {
   server.begin();
 }
 
-void loop() {
-  checkResetButtonState();
-  checkRestartRequest();
-  updateStateLed();
-
-  if (!configLoaded) {
-    server.handleClient();
-  }
-}
-
 void checkResetButtonState() {
   if (digitalRead(RESET_BUTTON) == 1) {
     Serial.println("Reset button pressed");
@@ -242,5 +237,34 @@ void updateStateLed() {
     delay(300);
     digitalWrite(STATE_LED, LOW);
     delay(300);
+  }
+}
+
+void run() {
+  switch(currentMode) {
+    case CLOCK_MODE:
+      runClockMode();
+      break;
+
+    default:
+      Serial.println(currentMode);
+
+  }
+
+}
+
+void runClockMode() {
+  
+}
+
+void loop() {
+  checkResetButtonState();
+  checkRestartRequest();
+  updateStateLed();
+
+  if (configLoaded) {
+    run();
+  } else {
+    server.handleClient();
   }
 }
